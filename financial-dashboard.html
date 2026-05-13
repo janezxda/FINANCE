@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financial Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    background: #f5f5f7;
+    color: #1d1d1f;
+    min-height: 100vh;
+    padding: 32px 24px 64px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1280px; margin: 0 auto; }
+
+  .header { margin-bottom: 32px; animation: fadeIn 0.5s ease-out; }
+  .header h1 {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 44px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: #1d1d1f;
+    margin-bottom: 6px;
+  }
+  .header p {
+    color: #6e6e73;
+    font-size: 16px;
+    font-weight: 400;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 24px 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    animation: fadeIn 0.5s ease-out backwards;
+  }
+  .stat-card:nth-child(1) { animation-delay: 0.05s; }
+  .stat-card:nth-child(2) { animation-delay: 0.1s; }
+  .stat-card:nth-child(3) { animation-delay: 0.15s; }
+  .stat-card:nth-child(4) { animation-delay: 0.2s; }
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.06), 0 12px 24px rgba(0,0,0,0.06);
+  }
+  .stat-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 14px;
+    font-size: 18px;
+  }
+  .icon-income  { background: rgba(52,199,89,0.12);  color: #34c759; }
+  .icon-expense { background: rgba(255,45,85,0.12);  color: #ff2d55; }
+  .icon-savings { background: rgba(0,122,255,0.12);  color: #007aff; }
+  .icon-rate    { background: rgba(175,82,222,0.12); color: #af52de; }
+
+  .stat-label {
+    font-size: 13px; color: #6e6e73; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px;
+  }
+  .stat-value {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 34px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: #1d1d1f;
+    line-height: 1.1;
+  }
+  .stat-subtitle {
+    font-size: 13px; color: #6e6e73; margin-top: 6px;
+  }
+
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+    animation: fadeIn 0.5s ease-out backwards;
+    animation-delay: 0.25s;
+  }
+  .card h2 {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+  .card-subtitle {
+    font-size: 13px; color: #6e6e73; margin-bottom: 20px;
+  }
+
+  /* Sliders */
+  .slider-group { margin-bottom: 18px; }
+  .slider-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .slider-label { font-size: 14px; font-weight: 500; color: #1d1d1f; }
+  .slider-value {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: #1d1d1f;
+  }
+  .slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: #e5e5ea;
+    border-radius: 2px;
+    outline: none;
+  }
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid #007aff;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    transition: transform 0.15s ease;
+  }
+  .slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
+  .slider::-moz-range-thumb {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #ffffff; border: 2px solid #007aff;
+    cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+  .slider-range {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: #a1a1a6; margin-top: 4px;
+  }
+
+  /* Donut */
+  .donut-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 240px) 1fr;
+    gap: 28px;
+    align-items: center;
+  }
+  .donut-container { position: relative; height: 240px; }
+  .donut-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .donut-center .rate {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 38px;
+    font-weight: 500;
+    color: #1d1d1f;
+    letter-spacing: -0.02em;
+  }
+  .donut-center .rate-label {
+    font-size: 12px;
+    color: #6e6e73;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+  .legend { display: flex; flex-direction: column; gap: 10px; }
+  .legend-row {
+    display: grid;
+    grid-template-columns: 14px 1fr auto auto;
+    gap: 10px;
+    align-items: center;
+    font-size: 14px;
+  }
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 4px;
+  }
+  .legend-name { color: #1d1d1f; font-weight: 500; }
+  .legend-amt  { color: #1d1d1f; font-variant-numeric: tabular-nums; }
+  .legend-pct  { color: #6e6e73; font-size: 12px; min-width: 38px; text-align: right; }
+
+  /* Projection */
+  .scenario-buttons {
+    display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .scenario-btn {
+    padding: 8px 16px;
+    border-radius: 100px;
+    border: 1px solid #d2d2d7;
+    background: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1d1d1f;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .scenario-btn:hover { border-color: #007aff; }
+  .scenario-btn.active {
+    background: #007aff; color: #ffffff; border-color: #007aff;
+  }
+  .projection-container { height: 240px; position: relative; }
+
+  /* Milestones */
+  .milestone {
+    padding: 16px 0;
+    border-bottom: 1px solid #f0f0f2;
+  }
+  .milestone:last-child { border-bottom: none; padding-bottom: 0; }
+  .milestone:first-child { padding-top: 0; }
+  .milestone-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .milestone-name {
+    font-size: 14px; font-weight: 500; color: #1d1d1f;
+  }
+  .milestone-eta {
+    font-size: 13px; color: #6e6e73;
+    font-variant-numeric: tabular-nums;
+  }
+  .milestone-bar {
+    background: #f0f0f2;
+    border-radius: 100px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .milestone-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Benchmarks */
+  .benchmark {
+    padding: 16px 0;
+    border-bottom: 1px solid #f0f0f2;
+  }
+  .benchmark:last-child { border-bottom: none; padding-bottom: 0; }
+  .benchmark:first-child { padding-top: 0; }
+  .benchmark-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .benchmark-label {
+    font-size: 14px; font-weight: 500; color: #1d1d1f;
+  }
+  .benchmark-value {
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .benchmark-bar-wrap {
+    position: relative;
+    height: 8px;
+    background: #f0f0f2;
+    border-radius: 100px;
+    overflow: visible;
+  }
+  .benchmark-bar {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 0.4s ease;
+  }
+  .benchmark-marker {
+    position: absolute;
+    top: -3px;
+    width: 2px;
+    height: 14px;
+    background: #1d1d1f;
+    border-radius: 1px;
+  }
+  .benchmark-guideline {
+    font-size: 11px; color: #a1a1a6; margin-top: 4px;
+  }
+
+  /* Insight */
+  .insight-card {
+    background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
+    color: #ffffff;
+    border-radius: 20px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 16px rgba(0, 122, 255, 0.2);
+    animation: fadeIn 0.5s ease-out backwards;
+    animation-delay: 0.3s;
+  }
+  .insight-card h3 {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 26px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .insight-card p {
+    font-size: 15px;
+    opacity: 0.92;
+    line-height: 1.55;
+  }
+
+  .footer {
+    text-align: center;
+    color: #a1a1a6;
+    font-size: 12px;
+    margin-top: 32px;
+    padding: 0 20px;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 980px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .main-grid { grid-template-columns: 1fr; }
+    .donut-wrap { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Financial dashboard</h1>
+    <p>Drag the sliders to see how every euro shapes your future.</p>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon icon-income">↑</div>
+      <div class="stat-label">Income</div>
+      <div class="stat-value" id="stat-income">€2,800</div>
+      <div class="stat-subtitle">After tax · monthly</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon icon-expense">↓</div>
+      <div class="stat-label">Expenses</div>
+      <div class="stat-value" id="stat-expense">€2,080</div>
+      <div class="stat-subtitle" id="stat-expense-sub">5 categories</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon icon-savings">★</div>
+      <div class="stat-label">Savings</div>
+      <div class="stat-value" id="stat-savings">€720</div>
+      <div class="stat-subtitle" id="stat-savings-sub">Per month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon icon-rate">%</div>
+      <div class="stat-label">Savings rate</div>
+      <div class="stat-value" id="stat-rate">25.7%</div>
+      <div class="stat-subtitle" id="stat-rate-sub">of income</div>
+    </div>
+  </div>
+
+  <!-- Insight -->
+  <div class="insight-card">
+    <h3 id="insight-title">Solid foundation.</h3>
+    <p id="insight-text">You're saving a real chunk of your income each month.</p>
+  </div>
+
+  <!-- Main grid: sliders + donut -->
+  <div class="main-grid">
+    <div class="card">
+      <h2>Your numbers</h2>
+      <p class="card-subtitle">Move any slider — everything else updates instantly.</p>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label">Income (after tax)</span>
+          <span class="slider-value" id="v-income">€2,800</span>
+        </div>
+        <input type="range" class="slider" id="s-income" min="500" max="10000" step="50" value="2800">
+        <div class="slider-range"><span>€500</span><span>€10,000</span></div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label">Diners Club</span>
+          <span class="slider-value" id="v-diners">€900</span>
+        </div>
+        <input type="range" class="slider" id="s-diners" min="0" max="2000" step="10" value="900">
+        <div class="slider-range"><span>€0</span><span>€2,000</span></div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label">Phone &amp; internet</span>
+          <span class="slider-value" id="v-phone">€230</span>
+        </div>
+        <input type="range" class="slider" id="s-phone" min="0" max="500" step="5" value="230">
+        <div class="slider-range"><span>€0</span><span>€500</span></div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label">Car</span>
+          <span class="slider-value" id="v-car">€300</span>
+        </div>
+        <input type="range" class="slider" id="s-car" min="0" max="1500" step="10" value="300">
+        <div class="slider-range"><span>€0</span><span>€1,500</span></div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label">Food</span>
+          <span class="slider-value" id="v-food">€150</span>
+        </div>
+        <input type="range" class="slider" id="s-food" min="0" max="1000" step="10" value="150">
+        <div class="slider-range"><span>€0</span><span>€1,000</span></div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label">Other</span>
+          <span class="slider-value" id="v-other">€500</span>
+        </div>
+        <input type="range" class="slider" id="s-other" min="0" max="2000" step="10" value="500">
+        <div class="slider-range"><span>€0</span><span>€2,000</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Where it goes</h2>
+      <p class="card-subtitle">Monthly breakdown — savings included.</p>
+      <div class="donut-wrap">
+        <div class="donut-container">
+          <canvas id="donut"></canvas>
+          <div class="donut-center">
+            <div class="rate" id="donut-rate">25.7%</div>
+            <div class="rate-label">Saved</div>
+          </div>
+        </div>
+        <div class="legend" id="legend"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Projection + Milestones -->
+  <div class="main-grid">
+    <div class="card">
+      <h2>12-month projection</h2>
+      <p class="card-subtitle">If you keep saving at this pace.</p>
+      <div class="scenario-buttons">
+        <button class="scenario-btn active" data-scenario="save">Just saving</button>
+        <button class="scenario-btn" data-scenario="hysa">High-yield (4.5%)</button>
+        <button class="scenario-btn" data-scenario="invest">Invested (7%)</button>
+      </div>
+      <div class="projection-container">
+        <canvas id="projection"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Milestones</h2>
+      <p class="card-subtitle">Progress toward each goal at your current pace.</p>
+      <div id="milestones"></div>
+    </div>
+  </div>
+
+  <!-- Benchmarks -->
+  <div class="card" style="margin-bottom: 24px;">
+    <h2>How you compare</h2>
+    <p class="card-subtitle">Versus the 50/30/20 guideline (needs / wants / savings).</p>
+    <div id="benchmarks"></div>
+  </div>
+
+  <div class="footer">
+    This dashboard is a planning tool, not financial advice. Numbers are estimates — your actual results will depend on real-world conditions.
+  </div>
+
+</div>
+
+<script>
+  // ---------- State ----------
+  const state = {
+    income: 2800,
+    diners: 900,
+    phone: 230,
+    car: 300,
+    food: 150,
+    other: 500,
+    startingSavings: 0,
+    scenario: 'save'
+  };
+
+  const categories = [
+    { key: 'diners', label: 'Diners Club',     color: '#ff2d55' },
+    { key: 'phone',  label: 'Phone & internet', color: '#ff9500' },
+    { key: 'car',    label: 'Car',             color: '#af52de' },
+    { key: 'food',   label: 'Food',            color: '#5ac8fa' },
+    { key: 'other',  label: 'Other',           color: '#ffcc00' }
+  ];
+  const savingsColor = '#34c759';
+
+  const fmt = n => '€' + Math.round(n).toLocaleString('en-US');
+
+  // ---------- Charts ----------
+  const donutCtx = document.getElementById('donut').getContext('2d');
+  const donutChart = new Chart(donutCtx, {
+    type: 'doughnut',
+    data: {
+      labels: [...categories.map(c => c.label), 'Savings'],
+      datasets: [{
+        data: [900, 230, 300, 150, 500, 720],
+        backgroundColor: [...categories.map(c => c.color), savingsColor],
+        borderWidth: 0,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      cutout: '72%',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.label}: ${fmt(ctx.parsed)}`
+          },
+          backgroundColor: '#1d1d1f',
+          titleFont: { family: 'Instrument Sans', size: 13 },
+          bodyFont:  { family: 'Instrument Sans', size: 13 },
+          padding: 10,
+          cornerRadius: 8
+        }
+      }
+    }
+  });
+
+  const projCtx = document.getElementById('projection').getContext('2d');
+  const projChart = new Chart(projCtx, {
+    type: 'line',
+    data: {
+      labels: ['Now','M1','M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','M12'],
+      datasets: [{
+        label: 'Balance',
+        data: [],
+        borderColor: '#007aff',
+        backgroundColor: 'rgba(0,122,255,0.08)',
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.35,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: '#007aff',
+        pointHoverBorderColor: '#ffffff',
+        pointHoverBorderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => 'Balance: ' + fmt(ctx.parsed.y) },
+          backgroundColor: '#1d1d1f',
+          titleFont: { family: 'Instrument Sans', size: 13 },
+          bodyFont:  { family: 'Instrument Sans', size: 13 },
+          padding: 10,
+          cornerRadius: 8
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#86868b', font: { family: 'Instrument Sans', size: 11 } }
+        },
+        y: {
+          grid: { color: '#f0f0f2', drawBorder: false },
+          ticks: {
+            color: '#86868b',
+            font: { family: 'Instrument Sans', size: 11 },
+            callback: v => fmt(v)
+          }
+        }
+      }
+    }
+  });
+
+  // ---------- Update ----------
+  function update() {
+    // Read sliders
+    state.income = +document.getElementById('s-income').value;
+    state.diners = +document.getElementById('s-diners').value;
+    state.phone  = +document.getElementById('s-phone').value;
+    state.car    = +document.getElementById('s-car').value;
+    state.food   = +document.getElementById('s-food').value;
+    state.other  = +document.getElementById('s-other').value;
+
+    document.getElementById('v-income').textContent = fmt(state.income);
+    document.getElementById('v-diners').textContent = fmt(state.diners);
+    document.getElementById('v-phone').textContent  = fmt(state.phone);
+    document.getElementById('v-car').textContent    = fmt(state.car);
+    document.getElementById('v-food').textContent   = fmt(state.food);
+    document.getElementById('v-other').textContent  = fmt(state.other);
+
+    const expense = state.diners + state.phone + state.car + state.food + state.other;
+    const savings = state.income - expense;
+    const rate = state.income > 0 ? (savings / state.income) * 100 : 0;
+
+    document.getElementById('stat-income').textContent  = fmt(state.income);
+    document.getElementById('stat-expense').textContent = fmt(expense);
+    document.getElementById('stat-savings').textContent = (savings < 0 ? '-' : '') + fmt(Math.abs(savings));
+    document.getElementById('stat-rate').textContent    = rate.toFixed(1) + '%';
+    document.getElementById('stat-rate-sub').textContent = rate >= 20 ? 'Above average · keep going' : (rate >= 0 ? 'Room to grow' : 'Spending more than earning');
+    document.getElementById('stat-savings-sub').textContent = savings >= 0 ? 'Per month' : 'Shortfall per month';
+
+    // Donut
+    const donutData = [state.diners, state.phone, state.car, state.food, state.other, Math.max(0, savings)];
+    donutChart.data.datasets[0].data = donutData;
+    donutChart.update('none');
+    document.getElementById('donut-rate').textContent = rate.toFixed(1) + '%';
+
+    // Legend
+    const total = donutData.reduce((a,b) => a+b, 0);
+    const legend = document.getElementById('legend');
+    legend.innerHTML = '';
+    const rows = [
+      ...categories.map(c => ({ name: c.label, val: state[c.key], color: c.color })),
+      { name: 'Savings', val: Math.max(0, savings), color: savingsColor }
+    ];
+    rows.forEach(r => {
+      const pct = total > 0 ? (r.val / total) * 100 : 0;
+      legend.innerHTML += `
+        <div class="legend-row">
+          <span class="legend-dot" style="background:${r.color}"></span>
+          <span class="legend-name">${r.name}</span>
+          <span class="legend-amt">${fmt(r.val)}</span>
+          <span class="legend-pct">${pct.toFixed(1)}%</span>
+        </div>`;
+    });
+
+    // Projection
+    updateProjection(savings);
+
+    // Milestones
+    renderMilestones(savings);
+
+    // Benchmarks
+    renderBenchmarks(expense, savings);
+
+    // Insight
+    renderInsight(rate, savings);
+  }
+
+  function updateProjection(monthlySavings) {
+    const start = state.startingSavings;
+    let annualRate = 0;
+    let color = '#007aff';
+    let bg = 'rgba(0,122,255,0.08)';
+    if (state.scenario === 'hysa')   { annualRate = 0.045; color = '#34c759'; bg = 'rgba(52,199,89,0.10)'; }
+    if (state.scenario === 'invest') { annualRate = 0.07;  color = '#af52de'; bg = 'rgba(175,82,222,0.10)'; }
+    const monthlyRate = annualRate / 12;
+
+    let bal = start;
+    const data = [bal];
+    for (let i = 1; i <= 12; i++) {
+      bal = bal * (1 + monthlyRate) + monthlySavings;
+      data.push(bal);
+    }
+    projChart.data.datasets[0].data = data;
+    projChart.data.datasets[0].borderColor = color;
+    projChart.data.datasets[0].backgroundColor = bg;
+    projChart.data.datasets[0].pointHoverBackgroundColor = color;
+    projChart.update('none');
+  }
+
+  function monthsToReach(target, monthly) {
+    if (monthly <= 0) return Infinity;
+    return Math.ceil(target / monthly);
+  }
+
+  function etaText(months) {
+    if (!isFinite(months)) return 'Need positive savings';
+    if (months <= 1) return '1 month';
+    if (months < 12) return `${months} months`;
+    const years = (months / 12);
+    return years < 10 ? `${years.toFixed(1)} years` : `${Math.round(years)} years`;
+  }
+
+  function renderMilestones(savings) {
+    const goals = [
+      { name: 'Goal: €10,000',      amount: 10000, color: '#34c759' },
+      { name: 'Emergency fund (3 months)', amount: (state.diners + state.phone + state.car + state.food + state.other) * 3, color: '#007aff' },
+      { name: 'Emergency fund (6 months)', amount: (state.diners + state.phone + state.car + state.food + state.other) * 6, color: '#5ac8fa' },
+      { name: '€100,000 milestone', amount: 100000, color: '#af52de' }
+    ];
+    const wrap = document.getElementById('milestones');
+    wrap.innerHTML = '';
+    goals.forEach(g => {
+      const months = monthsToReach(g.amount, savings);
+      const oneMonth = Math.min(100, savings > 0 ? (savings / g.amount) * 100 : 0);
+      wrap.innerHTML += `
+        <div class="milestone">
+          <div class="milestone-head">
+            <span class="milestone-name">${g.name} <span style="color:#a1a1a6; font-weight:400;">· ${fmt(g.amount)}</span></span>
+            <span class="milestone-eta">${etaText(months)}</span>
+          </div>
+          <div class="milestone-bar">
+            <div class="milestone-fill" style="width:${oneMonth}%; background:${g.color}"></div>
+          </div>
+        </div>`;
+    });
+  }
+
+  function renderBenchmarks(expense, savings) {
+    // 50/30/20 rule: needs 50%, wants 30%, savings 20%
+    // Map: needs = diners + phone + car + food, wants = other, savings = savings
+    const needs = state.diners + state.phone + state.car + state.food;
+    const wants = state.other;
+    const inc = Math.max(1, state.income);
+    const items = [
+      { label: 'Needs (housing, bills, food)', pct: (needs / inc) * 100, guide: 50, ideal: 'under', color: '#007aff' },
+      { label: 'Wants (other)',                pct: (wants / inc) * 100, guide: 30, ideal: 'under', color: '#ff9500' },
+      { label: 'Savings',                      pct: (savings / inc) * 100, guide: 20, ideal: 'over',  color: '#34c759' }
+    ];
+    const wrap = document.getElementById('benchmarks');
+    wrap.innerHTML = '';
+    items.forEach(it => {
+      const max = Math.max(60, it.pct + 10, it.guide + 10);
+      const widthPct = Math.max(0, Math.min(100, (it.pct / max) * 100));
+      const markerPct = (it.guide / max) * 100;
+      const onTrack = it.ideal === 'over' ? it.pct >= it.guide : it.pct <= it.guide;
+      const valColor = onTrack ? '#34c759' : (it.ideal === 'over' && it.pct < it.guide ? '#ff9500' : '#ff2d55');
+      wrap.innerHTML += `
+        <div class="benchmark">
+          <div class="benchmark-head">
+            <span class="benchmark-label">${it.label}</span>
+            <span class="benchmark-value" style="color:${valColor}">${it.pct.toFixed(1)}% <span style="color:#a1a1a6; font-weight:400;"> · target ${it.ideal === 'over' ? '≥' : '≤'} ${it.guide}%</span></span>
+          </div>
+          <div class="benchmark-bar-wrap">
+            <div class="benchmark-bar" style="width:${widthPct}%; background:${it.color}"></div>
+            <div class="benchmark-marker" style="left:${markerPct}%"></div>
+          </div>
+          <div class="benchmark-guideline">${it.ideal === 'over' ? 'Aim for at least' : 'Keep below'} ${it.guide}% of income (50/30/20 rule).</div>
+        </div>`;
+    });
+  }
+
+  function renderInsight(rate, savings) {
+    const title = document.getElementById('insight-title');
+    const text  = document.getElementById('insight-text');
+    if (savings < 0) {
+      title.textContent = 'Spending more than you earn.';
+      text.textContent = `You're €${Math.abs(Math.round(savings)).toLocaleString('en-US')} short each month. Try lowering the biggest slider — even small cuts compound fast.`;
+    } else if (rate >= 50) {
+      title.textContent = 'Exceptional saver.';
+      text.textContent = `You're putting away ${rate.toFixed(0)}% of income. At this pace, financial independence isn't a maybe — it's a timeline.`;
+    } else if (rate >= 20) {
+      title.textContent = 'Solid foundation.';
+      const monthsTo10k = monthsToReach(10000, savings);
+      text.textContent = `Saving ${rate.toFixed(0)}% of income is well above the 20% guideline. You'll hit your €10,000 goal in roughly ${etaText(monthsTo10k)}.`;
+    } else if (rate > 0) {
+      title.textContent = 'Building momentum.';
+      text.textContent = `You're saving ${rate.toFixed(0)}%. Bumping it to 20% — about €${Math.round(state.income * 0.2 - savings).toLocaleString('en-US')} more per month — would change the trajectory.`;
+    } else {
+      title.textContent = 'Break-even, no cushion yet.';
+      text.textContent = 'Every euro coming in is going right back out. Pick one variable expense to trim first.';
+    }
+  }
+
+  // ---------- Wire events ----------
+  ['s-income','s-diners','s-phone','s-car','s-food','s-other'].forEach(id => {
+    document.getElementById(id).addEventListener('input', update);
+  });
+  document.querySelectorAll('.scenario-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.scenario = btn.dataset.scenario;
+      update();
+    });
+  });
+
+  update();
+</script>
+</body>
+</html>
